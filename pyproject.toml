@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "hexlet-code"
+version = "0.1.0"
+description = "Project Page Loader on www.hexlet.io"
+authors = ["li0n0k <li0n0m0nk@gmail.com>"]
+packages = [
+  { include = "page_loader" },
+]
+classifiers = [
+  "Topic :: Education",
+  "Programming Language :: Python",
+]
+
+[tool.poetry.scripts]
+gendiff = "page_loader.scripts.page_loader:main"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+wemake-python-styleguide = "^0.15.2"
+pytest = "^6.2.2"
+pytest-cov = "^2.11.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
