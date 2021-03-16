@@ -25,4 +25,4 @@ def get_input_params() -> tuple:
         help='set directory for saved pages (default: current directory)',
     )
     args = parser.parse_args()
-    return args.output, args.url
+    return args.output, args.url.lower()
