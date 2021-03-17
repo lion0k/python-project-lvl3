@@ -3,6 +3,7 @@
 import pytest
 import requests_mock
 from page_loader.engine import send_request
+from page_loader.logging import KnownError
 from requests.exceptions import HTTPError, RequestException
 
 URL = 'http://test.com/'
@@ -29,5 +30,5 @@ def test_raises_exception_connection_error():
     """Test raise exception when request error."""
     with requests_mock.mock() as mock:
         mock.request(requests_mock.ANY, requests_mock.ANY, exc=RequestException)
-        with pytest.raises(RequestException):
+        with pytest.raises(KnownError):
             send_request(URL)

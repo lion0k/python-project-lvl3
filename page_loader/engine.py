@@ -9,21 +9,17 @@ from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup as Bs
 from page_loader.file import create_directory, write_file
+from page_loader.logging import KnownError
 from requests import get
 from requests.exceptions import HTTPError, RequestException
 
 ERROR_REQUEST = "The data at this address '{url}' was not loaded. Error-{error}"
 SUCCESSFUL_STATUS_CODE = 200
-TAGS = {
-    'img': 'src',
-    'script': 'src',
-    'link': 'href',
-}
 
 
 def download(root_dir: str, url: str) -> str:
     """
-    Download page from URL with resources.
+    Download page from URL.
 
     Args:
         root_dir: directory to download
@@ -55,7 +51,7 @@ def download(root_dir: str, url: str) -> str:
 
 def parse_page(page: str, url: str, resources_dir_name: str):
     """
-    Parse page and change links.
+    Parse page and downloads resources.
 
     Args:
         page: page
@@ -67,8 +63,9 @@ def parse_page(page: str, url: str, resources_dir_name: str):
     """
     root_parse_url = parse_url(url)
     soup = Bs(page, 'html5lib')
-    for tag in soup.find_all(TAGS):
-        attr_value = tag.get(TAGS[tag.name])
+    tags = {'img': 'src', 'script': 'src', 'link': 'href'}
+    for tag in soup.find_all(tags):
+        attr_value = tag.get(tags[tag.name])
         if attr_value is None:
             continue
 
@@ -91,11 +88,11 @@ def parse_page(page: str, url: str, resources_dir_name: str):
                 join(resources_dir_name, changed_link),
                 send_request(source_link),
             )
-        logging.debug('Successful load resources {link}'.format(
+        logging.info('Successful load resources {link}'.format(
             link=source_link,
         ))
 
-        tag[TAGS[tag.name]] = '{source}'.format(source=changed_link)
+        tag[tags[tag.name]] = '{source}'.format(source=changed_link)
     return soup.encode(formatter='html5')
 
 
@@ -125,7 +122,7 @@ def send_request(url: str):
         url: url
 
     Raises:
-        RequestException: error send request
+        KnownError: error send request
 
     Returns:
         any:
@@ -134,7 +131,7 @@ def send_request(url: str):
         response = get(url)
     except RequestException as error:
         logging.error(error)
-        raise RequestException(ERROR_REQUEST.format(url=url, error=error))
+        raise KnownError(error)
 
     if response.status_code != SUCCESSFUL_STATUS_CODE:
         logging.warning(ERROR_REQUEST.format(
