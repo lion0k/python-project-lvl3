@@ -1,40 +1,27 @@
 """Page loader engine."""
 
+import logging
 from collections import namedtuple
 from contextlib import suppress
-from os.path import join
+from os.path import join, splitext
+from re import sub
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup as Bs
-from page_loader.file import convert_name, create_directory, write_file
+from page_loader.file import create_directory, write_file
 from requests import get
 from requests.exceptions import HTTPError, RequestException
 
-ERROR_REQUEST = "\n\nThe data at this address '{url}' was not loaded.\n{error}"
+ERROR_REQUEST = "The data at this address '{url}' was not loaded. Error-{error}"
 SUCCESSFUL_STATUS_CODE = 200
 TAGS = {
     'img': 'src',
+    'script': 'src',
+    'link': 'href',
 }
 
 
-def download(output_dir: str, url: str) -> str:
-    """
-    Download pages from URL with resources.
-
-    Args:
-        output_dir: directory to download
-        url: URL
-
-    Returns:
-        str: full path to downloaded index page
-    """
-    return join(
-        output_dir,
-        download_page(output_dir, url),
-    )
-
-
-def download_page(root_dir: str, url: str) -> str:
+def download(root_dir: str, url: str) -> str:
     """
     Download page from URL with resources.
 
@@ -45,28 +32,28 @@ def download_page(root_dir: str, url: str) -> str:
     Returns:
         str:
     """
-    page_name = '{name}.html'.format(name=convert_name(url))
-    response = send_request(url)
-    resources_dir_name = '{name}_files'.format(name=convert_name(url))
+    url_parse = parse_url(url)
+    prepare_name = '{netloc}{path}'.format(
+        netloc=convert_name(url_parse.netloc),
+        path=convert_name(url_parse.path),
+    )
+    page_name = '{name}.html'.format(name=prepare_name)
+    resources_dir_name = '{name}_files'.format(name=prepare_name)
+
     resources_dir = create_directory(
         root_dir,
         resources_dir_name,
     )
-    page, resources_page = parse_page(response.data, url, resources_dir_name)
-    write_file(join(root_dir, page_name), page, response.binary)
-    for resource in resources_page:
-        with suppress(RequestException, HTTPError, OSError):
-            resource_response = send_request(resource['link'])
+    page = parse_page(send_request(url), url, resources_dir)
+    write_file(
+        path=join(root_dir, page_name),
+        data=page,
+    )
 
-            write_file(
-                join(resources_dir, resource['filename']),
-                resource_response.data,
-                resource_response.binary,
-            )
-    return page_name
+    return join(root_dir, page_name)
 
 
-def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
+def parse_page(page: str, url: str, resources_dir_name: str):
     """
     Parse page and change links.
 
@@ -76,12 +63,9 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
         resources_dir_name: directory name for resources
 
     Returns:
-        tuple: include parsed page and list with links
+        any:
     """
     root_parse_url = parse_url(url)
-
-    resources_links = []
-    already_exists_links = set()
     soup = Bs(page, 'html5lib')
     for tag in soup.find_all(TAGS):
         attr_value = tag.get(TAGS[tag.name])
@@ -96,24 +80,23 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
         else:
             continue
 
-        changed_name = convert_name(url=source_link, parse_extension=True)
+        changed_name = build_filename(root_parse_url, source_parse_url)
         changed_link = join(
             resources_dir_name,
             changed_name,
         )
+
+        with suppress(RequestException, HTTPError, OSError):
+            write_file(
+                join(resources_dir_name, changed_link),
+                send_request(source_link),
+            )
+        logging.debug('Successful load resources {link}'.format(
+            link=source_link,
+        ))
+
         tag[TAGS[tag.name]] = '{source}'.format(source=changed_link)
-
-        if source_link in already_exists_links:
-            continue
-        already_exists_links.add(source_link)
-
-        resources_links.append({
-            'tag': tag.name,
-            'link': source_link,
-            'filename': changed_name,
-        })
-
-    return str(soup), resources_links
+    return soup.encode(formatter='html5')
 
 
 def parse_url(url: str) -> namedtuple:
@@ -134,7 +117,7 @@ def parse_url(url: str) -> namedtuple:
     )
 
 
-def send_request(url: str) -> namedtuple:
+def send_request(url: str):
     """
     Send request to url.
 
@@ -145,24 +128,58 @@ def send_request(url: str) -> namedtuple:
         RequestException: error send request
 
     Returns:
-        namedtuple:
+        any:
     """
     try:
         response = get(url)
     except RequestException as error:
+        logging.error(error)
         raise RequestException(ERROR_REQUEST.format(url=url, error=error))
 
     if response.status_code != SUCCESSFUL_STATUS_CODE:
+        logging.warning(ERROR_REQUEST.format(
+            url=url,
+            error=response.status_code,
+        ))
         response.raise_for_status()
 
-    if response.encoding:
-        return namedtuple('Response', ['data', 'binary', 'url'])(
-            data=response.content,
-            binary=False,
-            url=response.url,
-        )
-    return namedtuple('Response', ['data', 'binary', 'url'])(
-        data=response.text,
-        binary=True,
-        url=response.url,
+    return response.content
+
+
+def convert_name(url: str) -> str:
+    """
+    Convert name.
+
+    Args:
+        url: URL
+
+    Returns:
+        str:
+    """
+    url_without_scheme = sub('(^.+://)', '', url)
+    return sub('([^a-zA-Z0-9]+)', '-', url_without_scheme)
+
+
+def build_filename(root_url: namedtuple, source_url: namedtuple) -> str:
+    """
+    Build filename.
+
+    Args:
+        root_url: parsed root URL
+        source_url: parsed source URL
+
+    Returns:
+        str:
+    """
+    path, extension = splitext(source_url.path)
+    changed_name = convert_name(urljoin(
+        '{scheme}://{netloc}'.format(
+            scheme=root_url.scheme,
+            netloc=root_url.netloc,
+        ),
+        path,
+    ))
+    return '{name}{extension}'.format(
+        name=changed_name,
+        extension=extension if extension else '.html',
     )

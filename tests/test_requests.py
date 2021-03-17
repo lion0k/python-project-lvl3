@@ -1,7 +1,5 @@
 """Test requests."""
 
-from collections import namedtuple
-
 import pytest
 import requests_mock
 from page_loader.engine import send_request
@@ -13,10 +11,7 @@ SERVER_ERROR = 500
 
 def test_successful_answer():
     """Test successful answer."""
-    expected = namedtuple(
-        'Response',
-        ['data', 'binary', 'url'],
-    )(data='data', binary=True, url=URL)
+    expected = b'data'
     with requests_mock.mock() as mock:
         mock.get(URL, content=b'data')
         assert send_request(URL) == expected

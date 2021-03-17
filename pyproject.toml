@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hexlet-code"
-version = "0.1.0"
+version = "0.1.1"
 description = "Project Page Loader on www.hexlet.io"
 authors = ["li0n0k <li0n0m0nk@gmail.com>"]
 packages = [

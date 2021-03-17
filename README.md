@@ -9,7 +9,7 @@
 
 This is the third project in the Python learning course [hexlet.io](https://ru.hexlet.io)
 
-This package allows you to download data from a link and save it to a file in a directory of your choice.
+This package allows you to download web pages.
 ***
 #### Installation
 * Install [poetry](https://python-poetry.org/docs/#installation)

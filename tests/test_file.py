@@ -26,10 +26,10 @@ def test_raises_exception_write_file():
     """Test raise exception when write file."""
     with tempfile.TemporaryDirectory() as tempdir:
         path_fake_folder = join(tempdir, 'test_file')
-        write_file(path_fake_folder, 'data')
+        write_file(path_fake_folder, b'data')
         with pytest.raises(OSError):
             write_file(join(path_fake_folder, 'test'), '')
 
         chmod(tempdir, PERMISSION_ONLY_READ)
         with pytest.raises(PermissionError):
-            write_file(join(tempdir, 'file'), 'data')
+            write_file(join(tempdir, 'file'), b'data')

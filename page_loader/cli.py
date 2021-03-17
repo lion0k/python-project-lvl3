@@ -24,5 +24,16 @@ def get_input_params() -> tuple:
         default=getcwd(),
         help='set directory for saved pages (default: current directory)',
     )
+    parser.add_argument(
+        '-l',
+        '--log',
+        type=str,
+        default='error',
+        choices=['error', 'warning', 'debug'],
+        help='set the logging level (default: error)',
+    )
     args = parser.parse_args()
-    return args.output, args.url.lower()
+    return tuple(map(
+        lambda arg: arg.lower(),
+        [args.output, args.url, args.log],
+    ))
