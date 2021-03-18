@@ -3,17 +3,22 @@
 import logging
 from collections import namedtuple
 from contextlib import suppress
-from os.path import join, splitext
-from re import sub
+from os.path import join
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup as Bs
-from page_loader.file import create_directory, write_file
+from page_loader.file import (
+    build_filename,
+    convert_name,
+    create_directory,
+    write_file,
+)
 from page_loader.logging import KnownError
+from progress.bar import Bar
 from requests import get
-from requests.exceptions import HTTPError, RequestException
+from requests.exceptions import RequestException
 
-ERROR_REQUEST = "The data at this address '{url}' was not loaded. Error-{error}"
+ERROR_LOAD = "Code '{error}'. The data at this address '{url}' was not loaded."
 SUCCESSFUL_STATUS_CODE = 200
 
 
@@ -40,18 +45,26 @@ def download(root_dir: str, url: str) -> str:
         root_dir,
         resources_dir_name,
     )
-    page = parse_page(send_request(url), url, resources_dir)
+    page, resources = parse_page(send_request(url), url, resources_dir)
+    full_path_index_page = join(root_dir, page_name)
     write_file(
-        path=join(root_dir, page_name),
+        path=full_path_index_page,
         data=page,
     )
+    with Bar('Processing', max=len(resources)) as bar:
+        for resource in resources:
+            bar.next()
+            with suppress(RequestException, OSError):
+                write_file(
+                    resource['path'],
+                    send_request(resource['link']),
+                )
+    return full_path_index_page
 
-    return join(root_dir, page_name)
 
-
-def parse_page(page: str, url: str, resources_dir_name: str):
+def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
     """
-    Parse page and downloads resources.
+    Parse page.
 
     Args:
         page: page
@@ -59,41 +72,45 @@ def parse_page(page: str, url: str, resources_dir_name: str):
         resources_dir_name: directory name for resources
 
     Returns:
-        any:
+        tuple: parsed page, list resources
     """
-    root_parse_url = parse_url(url)
+    parse_url_root = parse_url(url)
     soup = Bs(page, 'html5lib')
     tags = {'img': 'src', 'script': 'src', 'link': 'href'}
+    resources_links = []
+    unique_links = set()
     for tag in soup.find_all(tags):
         attr_value = tag.get(tags[tag.name])
         if attr_value is None:
             continue
 
-        source_parse_url = parse_url(attr_value)
-        if not source_parse_url.netloc:
+        parse_url_source = parse_url(attr_value)
+        if not parse_url_source.netloc:
             source_link = urljoin(url, attr_value)
-        elif root_parse_url.netloc == source_parse_url.netloc:
+        elif parse_url_root.netloc == parse_url_source.netloc:
             source_link = attr_value
         else:
             continue
 
-        changed_name = build_filename(root_parse_url, source_parse_url)
         changed_link = join(
             resources_dir_name,
-            changed_name,
+            build_filename(parse_url_root, parse_url_source),
         )
+        tag[tags[tag.name]] = '{source}'.format(source=changed_link)
 
-        with suppress(RequestException, HTTPError, OSError):
-            write_file(
-                join(resources_dir_name, changed_link),
-                send_request(source_link),
-            )
-        logging.info('Successful load resources {link}'.format(
+        if source_link in unique_links:
+            continue
+        unique_links.add(source_link)
+
+        resources_links.append({
+            'path': join(resources_dir_name, changed_link),
+            'link': source_link,
+        })
+
+        logging.debug('Link resources successful added {link}'.format(
             link=source_link,
         ))
-
-        tag[tags[tag.name]] = '{source}'.format(source=changed_link)
-    return soup.encode(formatter='html5')
+    return soup.encode(formatter='html5'), resources_links
 
 
 def parse_url(url: str) -> namedtuple:
@@ -107,7 +124,7 @@ def parse_url(url: str) -> namedtuple:
         namedtuple: include parsed 'scheme, 'netloc', 'path'
     """
     url_parse = urlparse(url)
-    return namedtuple('Url', ['scheme', 'netloc', 'path'])(
+    return namedtuple('URL', ['scheme', 'netloc', 'path'])(
         scheme=url_parse.scheme,
         netloc=url_parse.netloc,
         path=url_parse.path,
@@ -122,7 +139,7 @@ def send_request(url: str):
         url: url
 
     Raises:
-        KnownError: error send request
+        KnownError: masking RequestException, HTTPError
 
     Returns:
         any:
@@ -134,49 +151,10 @@ def send_request(url: str):
         raise KnownError(error)
 
     if response.status_code != SUCCESSFUL_STATUS_CODE:
-        logging.warning(ERROR_REQUEST.format(
+        logging.warning(ERROR_LOAD.format(
             url=url,
             error=response.status_code,
         ))
         response.raise_for_status()
 
     return response.content
-
-
-def convert_name(url: str) -> str:
-    """
-    Convert name.
-
-    Args:
-        url: URL
-
-    Returns:
-        str:
-    """
-    url_without_scheme = sub('(^.+://)', '', url)
-    return sub('([^a-zA-Z0-9]+)', '-', url_without_scheme)
-
-
-def build_filename(root_url: namedtuple, source_url: namedtuple) -> str:
-    """
-    Build filename.
-
-    Args:
-        root_url: parsed root URL
-        source_url: parsed source URL
-
-    Returns:
-        str:
-    """
-    path, extension = splitext(source_url.path)
-    changed_name = convert_name(urljoin(
-        '{scheme}://{netloc}'.format(
-            scheme=root_url.scheme,
-            netloc=root_url.netloc,
-        ),
-        path,
-    ))
-    return '{name}{extension}'.format(
-        name=changed_name,
-        extension=extension if extension else '.html',
-    )

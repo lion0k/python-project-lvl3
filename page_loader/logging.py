@@ -21,7 +21,10 @@ def config_logger(log_level):
     stderr_handler = logging.StreamHandler(sys.stderr)
     logger = logging.getLogger()
 
-    formatter = logging.Formatter('{asctime}-{levelname}-{message}', style='{')
+    formatter = logging.Formatter(
+        '\n{asctime}-{levelname}-{message}',
+        style='{',
+    )
     stdout_handler.setFormatter(formatter)
 
     if log_level == 'warning':

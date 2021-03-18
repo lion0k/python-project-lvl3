@@ -1,12 +1,13 @@
 """File functions."""
 
 import logging
+from collections import namedtuple
 from os import mkdir
-from os.path import isdir, join, split
+from os.path import join, splitext
+from re import sub
+from urllib.parse import urljoin
 
 from page_loader.logging import KnownError
-
-PATH_ERROR = "Directory under the given path '{path}' not found"
 
 
 def create_directory(path: str, name_folder: str) -> str:
@@ -18,7 +19,7 @@ def create_directory(path: str, name_folder: str) -> str:
         name_folder: name folder
 
     Raises:
-        KnownError: OSError, PermissionError
+        KnownError: masking OSError, PermissionError
 
     Returns:
         str: full path to created directory
@@ -26,9 +27,6 @@ def create_directory(path: str, name_folder: str) -> str:
     abs_path = join(path, name_folder)
     try:
         mkdir(abs_path)
-    except PermissionError as error:
-        logging.error(error)
-        raise KnownError(error)
     except OSError as error:
         logging.error(error)
         raise KnownError(error)
@@ -48,21 +46,54 @@ def write_file(path: str, data):
         data: data
 
     Raises:
-        KnownError: OSError, PermissionError
+        KnownError: masking OSError, PermissionError
     """
-    directory, _ = split(path)
-
-    if not isdir(directory):
-        logging.error(PATH_ERROR.format(path=directory))
-        raise KnownError(PATH_ERROR.format(path=directory))
-
     try:
         with open(path, 'wb') as file_descriptor:
             file_descriptor.write(data)
-    except PermissionError as error:
+    except OSError as error:
         logging.error(error)
         raise KnownError(error)
 
     logging.debug('Successful write file {path}'.format(
         path=path,
     ))
+
+
+def build_filename(root_url: namedtuple, source_url: namedtuple) -> str:
+    """
+    Build filename.
+
+    Args:
+        root_url: parsed root URL
+        source_url: parsed source URL
+
+    Returns:
+        str:
+    """
+    path, extension = splitext(source_url.path)
+    changed_name = convert_name(urljoin(
+        '{scheme}://{netloc}'.format(
+            scheme=root_url.scheme,
+            netloc=root_url.netloc,
+        ),
+        path,
+    ))
+    return '{name}{extension}'.format(
+        name=changed_name,
+        extension=extension if extension else '.html',
+    )
+
+
+def convert_name(url: str) -> str:
+    """
+    Convert name.
+
+    Args:
+        url: URL
+
+    Returns:
+        str:
+    """
+    url_without_scheme = sub('(^.+://)', '', url)
+    return sub('([^a-zA-Z0-9]+)', '-', url_without_scheme)
