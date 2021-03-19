@@ -6,7 +6,7 @@ from page_loader.engine import send_request
 from page_loader.logging import KnownError
 from requests.exceptions import HTTPError, RequestException
 
-URL = 'http://test.com/'
+URL = 'http://test.com'
 SERVER_ERROR = 500
 
 
@@ -15,7 +15,7 @@ def test_successful_answer():
     expected = b'data'
     with requests_mock.mock() as mock:
         mock.get(URL, content=b'data')
-        assert send_request(URL) == expected
+        assert send_request(URL)[0] == expected
 
 
 def test_raises_exception_server_error():

@@ -35,7 +35,7 @@ def build_link(root_url: str, source_url: str) -> str:
     parsed_root_url = urlparse(root_url)
     parsed_source_url = urlparse(source_url)
     root_netloc = parsed_root_url.netloc
-    source_netloc = parsed_root_url.netloc
+    source_netloc = parsed_source_url.netloc
     if not source_netloc or root_netloc == source_netloc:
         change_url = parsed_source_url._replace(
             scheme=parsed_root_url.scheme,
@@ -55,7 +55,7 @@ def download(url: str, root_dir: str) -> str:
     Returns:
         str:
     """
-    content_index_page = send_request(url)
+    content, root_url = send_request(url)
 
     parsed_root_url = urlparse(url)
     resources_dir_name = '{netloc}{path}_files'.format(
@@ -66,7 +66,7 @@ def download(url: str, root_dir: str) -> str:
         root_dir,
         resources_dir_name,
     )
-    page, resources = parse_page(content_index_page, url, resources_dir)
+    page, resources = parse_page(content, root_url, resources_dir)
     full_path_index_page = join(root_dir, build_filename(url, url))
     write_file(path=full_path_index_page, data=page)
 
@@ -76,7 +76,7 @@ def download(url: str, root_dir: str) -> str:
             with suppress(RequestException, OSError):
                 write_file(
                     resource['path'],
-                    send_request(resource['link']),
+                    send_request(resource['link'])[0],
                 )
     return full_path_index_page
 
@@ -127,7 +127,7 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
     return soup.encode(formatter='html5'), resources_links
 
 
-def send_request(url: str):
+def send_request(url: str) -> tuple:
     """
     Send request to url.
 
@@ -138,7 +138,7 @@ def send_request(url: str):
         KnownError: masking RequestException, HTTPError
 
     Returns:
-        any:
+        tuple:
     """
     try:
         response = get(url)
@@ -153,4 +153,8 @@ def send_request(url: str):
         ))
         response.raise_for_status()
 
-    return response.content
+    return response.content, response.url
+
+
+if __name__ == '__main__':
+    build_link('https://site.com/blog', 'photos/me.jpg')
