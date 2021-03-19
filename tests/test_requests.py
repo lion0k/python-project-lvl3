@@ -15,7 +15,7 @@ def test_successful_answer():
     expected = b'data'
     with requests_mock.mock() as mock:
         mock.get(URL, content=b'data')
-        assert send_request(URL)[0] == expected
+        assert send_request(URL) == expected
 
 
 def test_raises_exception_server_error():

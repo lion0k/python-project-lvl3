@@ -11,7 +11,7 @@ from page_loader.logging import KnownError
 MAX_LENGTH_FILENAME = 250
 
 
-def create_directory(path: str, name_folder: str) -> str:
+def create_directory(path: str, name_folder: str):
     """
     Create directory.
 
@@ -21,9 +21,6 @@ def create_directory(path: str, name_folder: str) -> str:
 
     Raises:
         KnownError: masking OSError, PermissionError
-
-    Returns:
-        str: full path to created directory
     """
     abs_path = join(path, name_folder)
     try:
@@ -35,7 +32,6 @@ def create_directory(path: str, name_folder: str) -> str:
     logging.debug('Successful create directory {path}'.format(
         path=abs_path,
     ))
-    return abs_path
 
 
 def write_file(path: str, data):

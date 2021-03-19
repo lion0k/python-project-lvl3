@@ -55,18 +55,18 @@ def download(url: str, root_dir: str) -> str:
     Returns:
         str:
     """
-    content, root_url = send_request(url)
+    content = send_request(url)
 
     parsed_root_url = urlparse(url)
     resources_dir_name = '{netloc}{path}_files'.format(
         netloc=convert_name(parsed_root_url.netloc),
         path=convert_name(parsed_root_url.path),
     )
-    resources_dir = create_directory(
+    create_directory(
         root_dir,
         resources_dir_name,
     )
-    page, resources = parse_page(content, root_url, resources_dir)
+    page, resources = parse_page(content, url, resources_dir_name)
     full_path_index_page = join(root_dir, build_filename(url, url))
     write_file(path=full_path_index_page, data=page)
 
@@ -75,8 +75,8 @@ def download(url: str, root_dir: str) -> str:
             bar.next()
             with suppress(RequestException, OSError):
                 write_file(
-                    resource['path'],
-                    send_request(resource['link'])[0],
+                    join(root_dir, resource['path']),
+                    send_request(resource['link']),
                 )
     return full_path_index_page
 
@@ -117,7 +117,7 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
         unique_links.add(source_link)
 
         resources_links.append({
-            'path': join(resources_dir_name, changed_link),
+            'path': changed_link,
             'link': source_link,
         })
 
@@ -127,7 +127,7 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
     return soup.encode(formatter='html5'), resources_links
 
 
-def send_request(url: str) -> tuple:
+def send_request(url: str):
     """
     Send request to url.
 
@@ -138,7 +138,7 @@ def send_request(url: str) -> tuple:
         KnownError: masking RequestException, HTTPError
 
     Returns:
-        tuple:
+        any:
     """
     try:
         response = get(url)
@@ -153,8 +153,4 @@ def send_request(url: str) -> tuple:
         ))
         response.raise_for_status()
 
-    return response.content, response.url
-
-
-if __name__ == '__main__':
-    build_link('https://site.com/blog', 'photos/me.jpg')
+    return response.content
