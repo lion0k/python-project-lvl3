@@ -22,7 +22,7 @@ def config_logger(log_level):
     logger = logging.getLogger()
 
     formatter = logging.Formatter(
-        '\n{asctime}-{levelname}-{message}',
+        '{asctime}-{levelname}-{message}',
         style='{',
     )
     stdout_handler.setFormatter(formatter)

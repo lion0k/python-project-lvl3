@@ -20,3 +20,13 @@ This package allows you to download web pages.
 * ```python -m page_loader.scripts.page_loader -o /var/tmp https://test.com```
 * ```poetry run page-loader -o /var/tmp https://test.com```
 ***
+###### Download page 
+[![asciicast](https://asciinema.org/a/SI6BUIk5MOu4VZgRyADt5SASb.svg)](https://asciinema.org/a/SI6BUIk5MOu4VZgRyADt5SASb)
+###### Download page resources
+[![asciicast](https://asciinema.org/a/cASYR1xvezUwlFK9bwrpBPyAl.svg)](https://asciinema.org/a/cASYR1xvezUwlFK9bwrpBPyAl)
+###### Download with logging
+[![asciicast](https://asciinema.org/a/95JkH8TXss3bACTIEU3qnYQqk.svg)](https://asciinema.org/a/95JkH8TXss3bACTIEU3qnYQqk)
+###### Error processing
+[![asciicast](https://asciinema.org/a/ipviGXVEnSPNNGXyj6ljNUDzv.svg)](https://asciinema.org/a/ipviGXVEnSPNNGXyj6ljNUDzv)
+###### Download page with progress display
+[![asciicast](https://asciinema.org/a/OQ9gVh4Ih9UECocPyOaKg8bIA.svg)](https://asciinema.org/a/OQ9gVh4Ih9UECocPyOaKg8bIA)

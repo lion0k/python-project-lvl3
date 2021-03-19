@@ -1,10 +1,9 @@
 """Page loader engine."""
 
 import logging
-from collections import namedtuple
 from contextlib import suppress
 from os.path import join
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse, urlunparse
 
 from bs4 import BeautifulSoup as Bs
 from page_loader.file import (
@@ -22,6 +21,29 @@ ERROR_LOAD = "Code '{error}'. The data at this address '{url}' was not loaded."
 SUCCESSFUL_STATUS_CODE = 200
 
 
+def build_link(root_url: str, source_url: str) -> str:
+    """
+    Build correct link.
+
+    Args:
+        root_url: root URL
+        source_url: source URL
+
+    Returns:
+        str:
+    """
+    parsed_root_url = urlparse(root_url)
+    parsed_source_url = urlparse(source_url)
+    root_netloc = parsed_root_url.netloc
+    source_netloc = parsed_root_url.netloc
+    if not source_netloc or root_netloc == source_netloc:
+        change_url = parsed_source_url._replace(
+            scheme=parsed_root_url.scheme,
+            netloc=parsed_root_url.netloc,
+        )
+        return urlunparse(change_url)
+
+
 def download(root_dir: str, url: str) -> str:
     """
     Download page from URL.
@@ -33,24 +55,20 @@ def download(root_dir: str, url: str) -> str:
     Returns:
         str:
     """
-    url_parse = parse_url(url)
-    prepare_name = '{netloc}{path}'.format(
-        netloc=convert_name(url_parse.netloc),
-        path=convert_name(url_parse.path),
+    parsed_root_url = urlparse(url)
+    resources_dir_name = '{netloc}{path}_files'.format(
+        netloc=convert_name(parsed_root_url.netloc),
+        path=convert_name(parsed_root_url.path),
     )
-    page_name = '{name}.html'.format(name=prepare_name)
-    resources_dir_name = '{name}_files'.format(name=prepare_name)
-
     resources_dir = create_directory(
         root_dir,
         resources_dir_name,
     )
-    page, resources = parse_page(send_request(url), url, resources_dir)
-    full_path_index_page = join(root_dir, page_name)
-    write_file(
-        path=full_path_index_page,
-        data=page,
-    )
+    content_index_page = send_request(url)
+    page, resources = parse_page(content_index_page, url, resources_dir)
+    full_path_index_page = join(root_dir, build_filename(url, url))
+    write_file(path=full_path_index_page, data=page)
+
     with Bar('Processing', max=len(resources)) as bar:
         for resource in resources:
             bar.next()
@@ -74,7 +92,6 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
     Returns:
         tuple: parsed page, list resources
     """
-    parse_url_root = parse_url(url)
     soup = Bs(page, 'html5lib')
     tags = {'img': 'src', 'script': 'src', 'link': 'href'}
     resources_links = []
@@ -84,17 +101,13 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
         if attr_value is None:
             continue
 
-        parse_url_source = parse_url(attr_value)
-        if not parse_url_source.netloc:
-            source_link = urljoin(url, attr_value)
-        elif parse_url_root.netloc == parse_url_source.netloc:
-            source_link = attr_value
-        else:
+        source_link = build_link(url, attr_value)
+        if source_link is None:
             continue
 
         changed_link = join(
             resources_dir_name,
-            build_filename(parse_url_root, parse_url_source),
+            build_filename(url, attr_value),
         )
         tag[tags[tag.name]] = '{source}'.format(source=changed_link)
 
@@ -111,24 +124,6 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
             link=source_link,
         ))
     return soup.encode(formatter='html5'), resources_links
-
-
-def parse_url(url: str) -> namedtuple:
-    """
-    Parse url.
-
-    Args:
-        url: URL
-
-    Returns:
-        namedtuple: include parsed 'scheme, 'netloc', 'path'
-    """
-    url_parse = urlparse(url)
-    return namedtuple('URL', ['scheme', 'netloc', 'path'])(
-        scheme=url_parse.scheme,
-        netloc=url_parse.netloc,
-        path=url_parse.path,
-    )
 
 
 def send_request(url: str):

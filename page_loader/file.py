@@ -1,13 +1,14 @@
 """File functions."""
 
 import logging
-from collections import namedtuple
 from os import mkdir
 from os.path import join, splitext
 from re import sub
-from urllib.parse import urljoin
+from urllib.parse import urlparse, urlunparse
 
 from page_loader.logging import KnownError
+
+MAX_LENGTH_FILENAME = 250
 
 
 def create_directory(path: str, name_folder: str) -> str:
@@ -60,27 +61,32 @@ def write_file(path: str, data):
     ))
 
 
-def build_filename(root_url: namedtuple, source_url: namedtuple) -> str:
+def build_filename(root_url: str, source_url: str) -> str:
     """
     Build filename.
 
     Args:
-        root_url: parsed root URL
-        source_url: parsed source URL
+        root_url: root URL
+        source_url: source URL
 
     Returns:
         str:
     """
-    path, extension = splitext(source_url.path)
-    changed_name = convert_name(urljoin(
-        '{scheme}://{netloc}'.format(
-            scheme=root_url.scheme,
-            netloc=root_url.netloc,
-        ),
-        path,
-    ))
+    parsed_root_url = urlparse(root_url)
+    parsed_source_url = urlparse(source_url)
+    path, extension = splitext(parsed_source_url.path)
+    changed_name = parsed_source_url._replace(
+        scheme=parsed_root_url.scheme,
+        netloc=parsed_root_url.netloc,
+        path=path,
+    )
+    name = convert_name(urlunparse(changed_name))
+    length_name = len(name) + len(extension)
+    if length_name > MAX_LENGTH_FILENAME:
+        name = name[:length_name - (length_name - MAX_LENGTH_FILENAME)]
+
     return '{name}{extension}'.format(
-        name=changed_name,
+        name=name,
         extension=extension if extension else '.html',
     )
 

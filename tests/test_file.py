@@ -5,7 +5,7 @@ from os import chmod
 from os.path import join
 
 import pytest
-from page_loader.file import create_directory, write_file
+from page_loader.file import build_filename, create_directory, write_file
 from page_loader.logging import KnownError
 
 PERMISSION_ONLY_READ = 0o444
@@ -42,3 +42,26 @@ def test_raises_exception_write_file():
         chmod(tempdir, PERMISSION_ONLY_READ)
         with pytest.raises(KnownError):
             write_file(join(tempdir, 'file'), b'data')
+
+
+@pytest.mark.parametrize(
+    'root_url, src_url, expected', [
+        (
+            'http://test.com/test',
+            'images/python.png',
+            'test-com-images-python.png',
+        ),
+        ('http://127.0.0.1', '/test', '127-0-0-1-test.html'),
+        ('http://127.0.0.1', '', '127-0-0-1.html'),
+    ],
+)
+def test_build_filename(root_url, src_url, expected):
+    """
+    Check build filename.
+
+    Args:
+        root_url: root URL
+        src_url:  source URL
+        expected: expected filename
+    """
+    assert build_filename(root_url, src_url) == expected
