@@ -55,6 +55,8 @@ def download(url: str, root_dir: str) -> str:
     Returns:
         str:
     """
+    content_index_page = send_request(url)
+
     parsed_root_url = urlparse(url)
     resources_dir_name = '{netloc}{path}_files'.format(
         netloc=convert_name(parsed_root_url.netloc),
@@ -64,7 +66,6 @@ def download(url: str, root_dir: str) -> str:
         root_dir,
         resources_dir_name,
     )
-    content_index_page = send_request(url)
     page, resources = parse_page(content_index_page, url, resources_dir)
     full_path_index_page = join(root_dir, build_filename(url, url))
     write_file(path=full_path_index_page, data=page)
