@@ -44,13 +44,13 @@ def build_link(root_url: str, source_url: str) -> str:
         return urlunparse(change_url)
 
 
-def download(root_dir: str, url: str) -> str:
+def download(url: str, root_dir: str) -> str:
     """
     Download page from URL.
 
     Args:
-        root_dir: directory to download
         url: URL
+        root_dir: directory to download
 
     Returns:
         str:
