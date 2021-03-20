@@ -68,7 +68,7 @@ def download(url: str, root_dir: str) -> str:
     )
     page, resources = parse_page(content, url, resources_dir_name)
     full_path_index_page = join(root_dir, build_filename(url, url))
-    write_file(path=full_path_index_page, data=page)
+    write_file(path=full_path_index_page, data=page, binary=False)
 
     with Bar('Processing', max=len(resources)) as bar:
         for resource in resources:
@@ -93,7 +93,7 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
     Returns:
         tuple: parsed page, list resources
     """
-    soup = Bs(page, 'html5lib')
+    soup = Bs(page, 'html.parser')
     tags = {'img': 'src', 'script': 'src', 'link': 'href'}
     resources_links = []
     unique_links = set()
@@ -124,7 +124,7 @@ def parse_page(page: str, url: str, resources_dir_name: str) -> tuple:
         logging.debug('Link resources successful added {link}'.format(
             link=source_link,
         ))
-    return soup.encode(formatter='html5'), resources_links
+    return soup.prettify(formatter='html5'), resources_links
 
 
 def send_request(url: str):
