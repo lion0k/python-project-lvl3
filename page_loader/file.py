@@ -34,21 +34,19 @@ def create_directory(path: str, name_folder: str):
     ))
 
 
-def write_file(path: str, data, binary=True):
+def write_file(path: str, data):
     """
     Write file.
 
     Args:
         path: full path
         data: data
-        binary: binary data
 
     Raises:
         KnownError: masking OSError, PermissionError
     """
-    mode = 'wb' if binary else 'w'
     try:
-        with open(path, mode) as file_descriptor:
+        with open(path, 'wb') as file_descriptor:
             file_descriptor.write(data)
     except OSError as error:
         logging.error(error)
