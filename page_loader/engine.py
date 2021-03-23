@@ -3,7 +3,7 @@
 import logging
 from contextlib import suppress
 from os.path import join
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup as Bs
 from page_loader.file import (
@@ -37,11 +37,7 @@ def build_link(root_url: str, source_url: str) -> str:
     root_netloc = parsed_root_url.netloc
     source_netloc = parsed_source_url.netloc
     if not source_netloc or root_netloc == source_netloc:
-        change_url = parsed_source_url._replace(
-            scheme=parsed_root_url.scheme,
-            netloc=parsed_root_url.netloc,
-        )
-        return urlunparse(change_url)
+        return urljoin(root_url, source_url)
 
 
 def download(url: str, root_dir: str) -> str:

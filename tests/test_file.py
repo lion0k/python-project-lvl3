@@ -51,6 +51,11 @@ def test_raises_exception_write_file():
             'images/python.png',
             'test-com-images-python.png',
         ),
+        (
+            'http://test.com/test',
+            '//test.com/images/python.png',
+            'test-com-images-python.png',
+        ),
         ('http://127.0.0.1', '/test', '127-0-0-1-test.html'),
         ('http://127.0.0.1', '', '127-0-0-1.html'),
     ],

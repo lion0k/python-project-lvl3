@@ -2,7 +2,7 @@
 
 import pytest
 import requests_mock
-from page_loader.engine import send_request
+from page_loader.engine import build_link, send_request
 from page_loader.logging import KnownError
 from requests.exceptions import HTTPError, RequestException
 
@@ -32,3 +32,39 @@ def test_raises_exception_connection_error():
         mock.request(requests_mock.ANY, requests_mock.ANY, exc=RequestException)
         with pytest.raises(KnownError):
             send_request(URL)
+
+
+@pytest.mark.parametrize(
+    'root_url, src_url, expected', [
+        (
+            'http://test.com/test',
+            '//test.com/images/python.png',
+            'http://test.com/images/python.png',
+        ),
+        (
+            'http://test.com/test',
+            'http://diff_domen.com/python.png',
+            None,
+        ),
+        (
+            'http://test.com/blog/',
+            'photos/image.png',
+            'http://test.com/blog/photos/image.png',
+        ),
+        (
+            'http://test.com/blog/',
+            '/photos/image.png',
+            'http://test.com/photos/image.png',
+        ),
+    ],
+)
+def test_build_link(root_url, src_url, expected):
+    """
+    Check build link.
+
+    Args:
+        root_url: root URL
+        src_url:  source URL
+        expected: expected link
+    """
+    assert build_link(root_url, src_url) == expected

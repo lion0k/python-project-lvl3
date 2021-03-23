@@ -41,7 +41,9 @@ def test_page_loader():
                 mock.get('http://test.com/scripts/test.js', content=b'js')
                 mock.get('http://test.com/courses', content=b'html')
                 mock.get('http://test.com/styles/app.css', content=b'css')
-                assert expected_path_index_page == download(URL, tempdir)
+                path_index_page = download(URL, tempdir)
+                assert expected_path_index_page == path_index_page
+
                 resources_dir = join(tempdir, 'test-com_files')
                 assert isdir(resources_dir)
                 expected_files = [
@@ -52,3 +54,7 @@ def test_page_loader():
                 ]
                 for filename in expected_files:
                     assert isfile(join(resources_dir, filename))
+
+                with open(get_file_absolute_path('expected.html')) as file_exp:
+                    with open(path_index_page) as file_tested:
+                        assert file_exp.read() == file_tested.read()
