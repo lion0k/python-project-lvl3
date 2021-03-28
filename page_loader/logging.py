@@ -4,12 +4,6 @@ import logging
 import sys
 
 
-class KnownError(Exception):
-    """Known exception."""
-
-    pass
-
-
 def config_logger(log_level):
     """
     Config setting logger.

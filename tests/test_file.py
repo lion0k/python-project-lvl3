@@ -6,7 +6,6 @@ from os.path import join
 
 import pytest
 from page_loader.file import build_filename, create_directory, write_file
-from page_loader.logging import KnownError
 
 PERMISSION_ONLY_READ = 0o444
 
@@ -19,11 +18,11 @@ def test_raises_exception_create_directory():
     """
     with tempfile.TemporaryDirectory() as tempdir:
         create_directory(tempdir, 'test')
-        with pytest.raises(KnownError):
+        with pytest.raises(OSError):
             create_directory(tempdir, 'test')
 
         chmod(tempdir, PERMISSION_ONLY_READ)
-        with pytest.raises(KnownError):
+        with pytest.raises(OSError):
             create_directory(tempdir, 'another_folder')
 
 
@@ -36,11 +35,11 @@ def test_raises_exception_write_file():
     with tempfile.TemporaryDirectory() as tempdir:
         path_fake_folder = join(tempdir, 'test_file')
         write_file(path_fake_folder, b'data')
-        with pytest.raises(KnownError):
+        with pytest.raises(OSError):
             write_file(join(path_fake_folder, 'test'), '')
 
         chmod(tempdir, PERMISSION_ONLY_READ)
-        with pytest.raises(KnownError):
+        with pytest.raises(OSError):
             write_file(join(tempdir, 'file'), b'data')
 
 
@@ -70,3 +69,15 @@ def test_build_filename(root_url, src_url, expected):
         expected: expected filename
     """
     assert build_filename(root_url, src_url) == expected
+
+
+def test_limit_length_build_filename():
+    """Check limit length build filename."""
+    root_url = 'http://127.0.0.1'
+    expected = 255
+    over_length_filename = 300
+    gen_name = ''.join(['a' for _ in range(over_length_filename)])
+    name_without_exp = '/{name}'.format(name=gen_name)
+    name_with_exp = '/{name}.png2png'.format(name=gen_name)
+    assert len(build_filename(root_url, name_without_exp)) == expected
+    assert len(build_filename(root_url, name_with_exp)) == expected

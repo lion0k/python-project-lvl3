@@ -1,17 +1,17 @@
 """Command line interface."""
 
-import argparse
+from argparse import ArgumentParser, Namespace
 from os import getcwd
 
 
-def get_input_params() -> tuple:
+def get_input_params() -> Namespace:
     """
     Get input params.
 
     Returns:
-        tuple: tuple with input arguments
+        Namespace: parsed arguments
     """
-    parser = argparse.ArgumentParser(description='Page loader')
+    parser = ArgumentParser(description='Page loader')
     parser.add_argument(
         'url',
         type=str,
@@ -32,8 +32,4 @@ def get_input_params() -> tuple:
         choices=['error', 'warning', 'debug'],
         help='set the logging level (default: error)',
     )
-    args = parser.parse_args()
-    return tuple(map(
-        lambda arg: arg.lower(),
-        [args.output, args.url, args.log],
-    ))
+    return parser.parse_args()
