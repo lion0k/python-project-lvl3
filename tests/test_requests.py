@@ -21,7 +21,8 @@ def test_raises_exception_server_error():
     server_error = 500
     with requests_mock.mock() as mock:
         mock.get(URL, status_code=server_error)
-        assert send_request(URL).status_code == server_error
+        with pytest.raises(RequestException):
+            send_request(URL)
 
 
 def test_raises_exception_connection_error():

@@ -21,7 +21,7 @@ def main():
     try:
         print(download(url, output_dir))
     except Exception as error:
-        logging.exception(error)
+        logging.error(error)
         exit(1)
 
 

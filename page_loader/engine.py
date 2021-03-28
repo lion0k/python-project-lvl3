@@ -126,6 +126,7 @@ def send_request(url: str) -> Response:
     """
     try:
         response = get(url)
+        response.raise_for_status()
     except RequestException as error:
         raise RequestException(error)
 

@@ -4,6 +4,7 @@ import logging
 import re
 from os import mkdir
 from os.path import join, splitext
+from typing import Union
 from urllib.parse import urlparse, urlunparse
 
 MAX_LENGTH_FILENAME = 255
@@ -31,7 +32,7 @@ def create_directory(path: str, name_folder: str):
     ))
 
 
-def write_file(path: str, data: bytes):
+def write_file(path: str, data: Union[str, bytes]):
     """
     Write file.
 
