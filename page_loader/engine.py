@@ -2,7 +2,7 @@
 
 import logging
 from os.path import join
-from typing import Optional
+from typing import Optional, Tuple
 from urllib.parse import urljoin, urlparse
 
 from bs4 import BeautifulSoup
@@ -48,7 +48,7 @@ def download(url: str, root_dir: str) -> str:
     Returns:
         str:
     """
-    content = send_request(url).content
+    content = send_request(url).text
     resources_dir_name = build_dirname(url)
     create_directory(
         root_dir,
@@ -74,17 +74,17 @@ def download(url: str, root_dir: str) -> str:
     return full_path_index_page
 
 
-def parse_page(page: bytes, url: str, resources_dir_name: str) -> tuple:
+def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
     """
     Parse page.
 
     Args:
         page: page
         url: URL
-        resources_dir_name: directory name for resources
+        resources_dir: directory name for resources
 
     Returns:
-        tuple: parsed page, list resources
+        tuple: parsed page, dict resources
     """
     soup = BeautifulSoup(page, 'html.parser')
     tags = {'img': 'src', 'script': 'src', 'link': 'href'}
@@ -99,7 +99,7 @@ def parse_page(page: bytes, url: str, resources_dir_name: str) -> tuple:
             continue
 
         changed_link = join(
-            resources_dir_name,
+            resources_dir,
             build_filename(url, attr_value),
         )
         tag[tags[tag.name]] = changed_link
