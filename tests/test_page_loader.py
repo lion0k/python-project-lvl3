@@ -37,13 +37,16 @@ def test_page_loader():
         with open(get_file_absolute_path('page.html')) as file_before:
             with requests_mock.Mocker() as mock:
                 long_name = ''.join(['a' for _ in range(250)])
-                file_a = 'http://test.com/images/{name}a.png'.format(
+                file_a = '{url}/images/{name}a.png'.format(
+                    url=URL,
                     name=long_name,
                 )
-                file_b = 'http://test.com/images/{name}b.png'.format(
+                file_b = '{url}/images/{name}b.png'.format(
+                    url=URL,
                     name=long_name,
                 )
-                file_c = 'http://test.com/images/{name}c.png'.format(
+                file_c = '{url}/images/{name}c.png'.format(
+                    url=URL,
                     name=long_name,
                 )
 
@@ -51,10 +54,10 @@ def test_page_loader():
                 mock.get(file_a, content=b'png')
                 mock.get(file_b, content=b'png')
                 mock.get(file_c, content=b'png')
-                mock.get('http://test.com/images/python.png', content=b'png')
-                mock.get('http://test.com/scripts/test.js', content=b'js')
-                mock.get('http://test.com/courses', content=b'html')
-                mock.get('http://test.com/styles/app.css', content=b'css')
+                mock.get('{url}/images/python.png'.format(url=URL), content=b'png')
+                mock.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
+                mock.get('{url}/courses'.format(url=URL), content=b'html')
+                mock.get('{url}/styles/app.css'.format(url=URL), content=b'css')
                 path_index_page = download(URL, tempdir)
                 assert expected_path_index_page == path_index_page
 

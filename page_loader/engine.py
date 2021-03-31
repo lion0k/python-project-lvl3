@@ -142,7 +142,3 @@ def send_request(url: str) -> requests.Response:
     response.raise_for_status()
 
     return response
-
-
-if __name__ == '__main__':
-    download('http://127.0.0.1:8088', '')
