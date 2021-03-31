@@ -73,7 +73,7 @@ def test_build_filename(root_url, src_url, expected):
         src_url:  source URL
         expected: expected filename
     """
-    assert build_filename(urljoin(root_url, src_url)) == expected
+    assert build_filename(urljoin(root_url, src_url))[0] == expected
 
 
 def test_limit_length_build_filename():
@@ -88,8 +88,8 @@ def test_limit_length_build_filename():
         name=gen_name,
         extension=expected_extension,
     )
-    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))
-    _, extension = os.path.splitext(filename_with_extension)
-    assert len(build_filename(urljoin(root_url, name_without_exp))) == expected
+    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))[0]
+    extension = os.path.splitext(filename_with_extension)[1]
+    assert len(build_filename(urljoin(root_url, name_without_exp))[0]) == expected
     assert len(filename_with_extension) == expected
     assert extension == expected_extension

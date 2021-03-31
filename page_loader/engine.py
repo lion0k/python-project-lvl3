@@ -8,7 +8,6 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 from page_loader.file import (
-    MAX_LENGTH_FILENAME,
     add_version,
     build_dirname,
     build_filename,
@@ -98,11 +97,11 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
         if source_link is None:
             continue
 
-        resources_filename = build_filename(source_link)
-        if len(resources_filename) == MAX_LENGTH_FILENAME:
+        resources_filename, is_crop_filename = build_filename(source_link)
+        if is_crop_filename:
             exists_file_names = map(
-                lambda file_name: file_name[1],
-                map(os.path.split, resources_links.values()),
+                lambda file_path: os.path.split(file_path)[1],
+                resources_links.values(),
             )
             if resources_filename in exists_file_names:
                 if resources_filename in file_versions:

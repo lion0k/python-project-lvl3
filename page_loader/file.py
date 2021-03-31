@@ -3,7 +3,7 @@
 import logging
 import os
 import re
-from typing import Union
+from typing import Tuple, Union
 from urllib.parse import urljoin, urlparse
 
 MAX_LENGTH_FILENAME = 255
@@ -44,7 +44,7 @@ def write_file(path: str, data: Union[str, bytes]):
     ))
 
 
-def build_filename(url: str) -> str:
+def build_filename(url: str) -> Tuple[str, bool]:
     """
     Build filename.
 
@@ -52,18 +52,20 @@ def build_filename(url: str) -> str:
         url: URL
 
     Returns:
-        str:
+        Tuple:
     """
     parsed_url = urlparse(url)
     path, extension = os.path.splitext(parsed_url.path)
     name = convert_name(urljoin(url, path))
     extension = extension if extension else '.html'
+    is_crop_filename = False
     if len(name) + len(extension) > MAX_LENGTH_FILENAME:
         name = name[:(MAX_LENGTH_FILENAME - len(extension))]
+        is_crop_filename = True
     return '{name}{extension}'.format(
         name=name,
         extension=extension,
-    )
+    ), is_crop_filename
 
 
 def build_dirname(url: str) -> str:
