@@ -13,15 +13,11 @@ from page_loader.logging import config_logger
 def main():
     """Start CLI-program page loader."""
     args = get_input_params()
-    output_dir, url, log_level = tuple(map(
-        lambda arg: arg.lower(),
-        [args.output, args.url, args.log],
-    ))
-    config_logger(log_level)
+    config_logger(args.log)
     try:
-        print(download(url, output_dir))
+        print(download(args.url, args.output))
     except Exception as error:
-        logging.error(error)
+        logging.exception(error)
         exit(1)
 
 

@@ -1,7 +1,6 @@
 """Command line interface."""
 
 from argparse import ArgumentParser, Namespace
-from os import getcwd
 
 
 def get_input_params() -> Namespace:
@@ -21,7 +20,6 @@ def get_input_params() -> Namespace:
         '-o',
         '--output',
         type=str,
-        default=getcwd(),
         help='set directory for saved pages (default: current directory)',
     )
     parser.add_argument(

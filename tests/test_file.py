@@ -1,11 +1,16 @@
 """Test file."""
 
+import os
 import tempfile
-from os import chmod
-from os.path import join
+from urllib.parse import urljoin
 
 import pytest
-from page_loader.file import build_filename, create_directory, write_file
+from page_loader.file import (
+    MAX_LENGTH_FILENAME,
+    build_filename,
+    create_directory,
+    write_file,
+)
 
 PERMISSION_ONLY_READ = 0o444
 
@@ -21,7 +26,7 @@ def test_raises_exception_create_directory():
         with pytest.raises(OSError):
             create_directory(tempdir, 'test')
 
-        chmod(tempdir, PERMISSION_ONLY_READ)
+        os.chmod(tempdir, PERMISSION_ONLY_READ)
         with pytest.raises(OSError):
             create_directory(tempdir, 'another_folder')
 
@@ -33,14 +38,14 @@ def test_raises_exception_write_file():
     check raises OSError, PermissionError
     """
     with tempfile.TemporaryDirectory() as tempdir:
-        path_fake_folder = join(tempdir, 'test_file')
+        path_fake_folder = os.path.join(tempdir, 'test_file')
         write_file(path_fake_folder, b'data')
         with pytest.raises(OSError):
-            write_file(join(path_fake_folder, 'test'), '')
+            write_file(os.path.join(path_fake_folder, 'test'), '')
 
-        chmod(tempdir, PERMISSION_ONLY_READ)
+        os.chmod(tempdir, PERMISSION_ONLY_READ)
         with pytest.raises(OSError):
-            write_file(join(tempdir, 'file'), b'data')
+            write_file(os.path.join(tempdir, 'file'), b'data')
 
 
 @pytest.mark.parametrize(
@@ -68,16 +73,23 @@ def test_build_filename(root_url, src_url, expected):
         src_url:  source URL
         expected: expected filename
     """
-    assert build_filename(root_url, src_url) == expected
+    assert build_filename(urljoin(root_url, src_url)) == expected
 
 
 def test_limit_length_build_filename():
     """Check limit length build filename."""
     root_url = 'http://127.0.0.1'
-    expected = 255
+    expected = MAX_LENGTH_FILENAME
     over_length_filename = 300
+    expected_extension = '.png2png'
     gen_name = ''.join(['a' for _ in range(over_length_filename)])
     name_without_exp = '/{name}'.format(name=gen_name)
-    name_with_exp = '/{name}.png2png'.format(name=gen_name)
-    assert len(build_filename(root_url, name_without_exp)) == expected
-    assert len(build_filename(root_url, name_with_exp)) == expected
+    name_with_exp = '/{name}{extension}'.format(
+        name=gen_name,
+        extension=expected_extension,
+    )
+    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))
+    _, extension = os.path.splitext(filename_with_extension)
+    assert len(build_filename(urljoin(root_url, name_without_exp))) == expected
+    assert len(filename_with_extension) == expected
+    assert extension == expected_extension

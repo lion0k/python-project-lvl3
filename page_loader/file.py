@@ -1,13 +1,14 @@
 """File functions."""
 
 import logging
+import os
 import re
-from os import mkdir
-from os.path import join, splitext
 from typing import Union
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urljoin, urlparse
 
 MAX_LENGTH_FILENAME = 255
+PATTERN_SCHEME = re.compile('(^.+://)')
+PATTERN_PATH = re.compile('([^a-zA-Z0-9]+)')
 
 
 def create_directory(path: str, name_folder: str):
@@ -17,15 +18,9 @@ def create_directory(path: str, name_folder: str):
     Args:
         path: full path
         name_folder: name folder
-
-    Raises:
-        OSError: OSError
     """
-    abs_path = join(path, name_folder)
-    try:
-        mkdir(abs_path)
-    except OSError as error:
-        raise OSError(error)
+    abs_path = os.path.join(path, name_folder)
+    os.mkdir(abs_path)
 
     logging.debug('Successful create directory {path}'.format(
         path=abs_path,
@@ -39,46 +34,32 @@ def write_file(path: str, data: Union[str, bytes]):
     Args:
         path: full path
         data: data
-
-    Raises:
-        OSError: OSError
     """
     mode = 'w' if isinstance(data, str) else 'wb'
-    try:
-        with open(path, mode) as file_descriptor:
-            file_descriptor.write(data)
-    except OSError as error:
-        raise OSError(error)
+    with open(path, mode) as file_descriptor:
+        file_descriptor.write(data)
 
     logging.debug('Successful write file {path}'.format(
         path=path,
     ))
 
 
-def build_filename(root_url: str, source_url: str) -> str:
+def build_filename(url: str) -> str:
     """
     Build filename.
 
     Args:
-        root_url: root URL
-        source_url: source URL
+        url: URL
 
     Returns:
         str:
     """
-    parsed_root_url = urlparse(root_url)
-    parsed_source_url = urlparse(source_url)
-    path, extension = splitext(parsed_source_url.path)
-    changed_name = parsed_source_url._replace(
-        scheme=parsed_root_url.scheme,
-        netloc=parsed_root_url.netloc,
-        path=path,
-    )
-    name = convert_name(urlunparse(changed_name))
+    parsed_url = urlparse(url)
+    path, extension = os.path.splitext(parsed_url.path)
+    name = convert_name(urljoin(url, path))
     extension = extension if extension else '.html'
     if len(name) + len(extension) > MAX_LENGTH_FILENAME:
         name = name[:(MAX_LENGTH_FILENAME - len(extension))]
-
     return '{name}{extension}'.format(
         name=name,
         extension=extension,
@@ -112,7 +93,25 @@ def convert_name(url: str) -> str:
     Returns:
         str:
     """
-    pattern_scheme = re.compile('(^.+://)')
-    pattern_not_word = re.compile('([^a-zA-Z0-9]+)')
-    url_without_scheme = re.sub(pattern_scheme, '', url)
-    return re.sub(pattern_not_word, '-', url_without_scheme)
+    url_without_scheme = PATTERN_SCHEME.sub('', url)
+    return PATTERN_PATH.sub('-', url_without_scheme)
+
+
+def add_version(filename: str, version: int) -> str:
+    """
+    Add version in filename.
+
+    Args:
+        filename: filename
+        version: version
+
+    Returns:
+        str:
+    """
+    path, extension = os.path.splitext(filename)
+    crop_path = path[:len(path) - len(str(version))]
+    return '{crop_path}{version}{extension}'.format(
+        crop_path=crop_path,
+        version=version,
+        extension=extension,
+    )
