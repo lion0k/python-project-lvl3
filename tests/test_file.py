@@ -27,7 +27,7 @@ def test_raises_exception_create_directory():
             create_directory(tempdir, 'test')
 
         os.chmod(tempdir, PERMISSION_ONLY_READ)
-        with pytest.raises(OSError):
+        with pytest.raises(PermissionError):
             create_directory(tempdir, 'another_folder')
 
 
@@ -44,7 +44,7 @@ def test_raises_exception_write_file():
             write_file(os.path.join(path_fake_folder, 'test'), '')
 
         os.chmod(tempdir, PERMISSION_ONLY_READ)
-        with pytest.raises(OSError):
+        with pytest.raises(PermissionError):
             write_file(os.path.join(tempdir, 'file'), b'data')
 
 

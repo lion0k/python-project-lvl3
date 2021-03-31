@@ -3,7 +3,7 @@
 import pytest
 import requests_mock
 from page_loader.engine import build_link, send_request
-from requests.exceptions import RequestException
+from requests.exceptions import HTTPError, RequestException
 
 URL = 'http://test.com'
 
@@ -21,7 +21,7 @@ def test_raises_exception_server_error():
     server_error = 500
     with requests_mock.mock() as mock:
         mock.get(URL, status_code=server_error)
-        with pytest.raises(RequestException):
+        with pytest.raises(HTTPError):
             send_request(URL)
 
 
