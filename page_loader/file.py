@@ -2,8 +2,10 @@
 
 import logging
 import os
+import random
 import re
-from typing import Tuple, Union
+import string
+from typing import Union
 from urllib.parse import urljoin, urlparse
 
 MAX_LENGTH_FILENAME = 255
@@ -22,9 +24,7 @@ def create_directory(path: str, name_folder: str):
     abs_path = os.path.join(path, name_folder)
     os.mkdir(abs_path)
 
-    logging.debug('Successful create directory {path}'.format(
-        path=abs_path,
-    ))
+    logging.debug('Successful create directory %s', abs_path)
 
 
 def write_file(path: str, data: Union[str, bytes]):
@@ -39,12 +39,10 @@ def write_file(path: str, data: Union[str, bytes]):
     with open(path, mode) as file_descriptor:
         file_descriptor.write(data)
 
-    logging.debug('Successful write file {path}'.format(
-        path=path,
-    ))
+    logging.debug('Successful write file %s', path)
 
 
-def build_filename(url: str) -> Tuple[str, bool]:
+def build_filename(url: str) -> str:
     """
     Build filename.
 
@@ -52,20 +50,18 @@ def build_filename(url: str) -> Tuple[str, bool]:
         url: URL
 
     Returns:
-        Tuple:
+        str:
     """
     parsed_url = urlparse(url)
     path, extension = os.path.splitext(parsed_url.path)
     name = convert_name(urljoin(url, path))
     extension = extension if extension else '.html'
-    is_crop_filename = False
     if len(name) + len(extension) > MAX_LENGTH_FILENAME:
         name = name[:(MAX_LENGTH_FILENAME - len(extension))]
-        is_crop_filename = True
     return '{name}{extension}'.format(
         name=name,
         extension=extension,
-    ), is_crop_filename
+    )
 
 
 def build_dirname(url: str) -> str:
@@ -99,21 +95,22 @@ def convert_name(url: str) -> str:
     return PATTERN_PATH.sub('-', url_without_scheme)
 
 
-def add_version(filename: str, version: int) -> str:
+def add_version(filename: str) -> str:
     """
     Add version in filename.
 
     Args:
         filename: filename
-        version: version
 
     Returns:
         str:
     """
+    chars = string.ascii_letters + string.digits
     path, extension = os.path.splitext(filename)
-    crop_path = path[:len(path) - len(str(version))]
-    return '{crop_path}{version}{extension}'.format(
+    salt = ''.join([random.choice(chars) for _ in range(6)])
+    crop_path = filename[:len(path) - len(salt)]
+    return '{crop_path}{salt}{extension}'.format(
         crop_path=crop_path,
-        version=version,
+        salt=salt,
         extension=extension,
     )

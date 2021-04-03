@@ -13,11 +13,12 @@ from page_loader.logging import config_logger
 def main():
     """Start CLI-program page loader."""
     args = get_input_params()
-    config_logger(args.log)
+    config_logger(args.log.upper())
     try:
         print(download(args.url, args.output))
     except Exception as error:
-        logging.exception(error)
+        logging.error(error)
+        logging.debug(error, exc_info=True)
         exit(1)
 
 

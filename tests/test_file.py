@@ -73,14 +73,14 @@ def test_build_filename(root_url, src_url, expected):
         src_url:  source URL
         expected: expected filename
     """
-    assert build_filename(urljoin(root_url, src_url))[0] == expected
+    assert build_filename(urljoin(root_url, src_url)) == expected
 
 
 def test_limit_length_build_filename():
     """Check limit length build filename."""
     root_url = 'http://127.0.0.1'
     expected = MAX_LENGTH_FILENAME
-    over_length_filename = 300
+    over_length_filename = MAX_LENGTH_FILENAME + 50
     expected_extension = '.png2png'
     gen_name = ''.join(['a' for _ in range(over_length_filename)])
     name_without_exp = '/{name}'.format(name=gen_name)
@@ -88,8 +88,8 @@ def test_limit_length_build_filename():
         name=gen_name,
         extension=expected_extension,
     )
-    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))[0]
+    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))
     extension = os.path.splitext(filename_with_extension)[1]
-    assert len(build_filename(urljoin(root_url, name_without_exp))[0]) == expected
+    assert len(build_filename(urljoin(root_url, name_without_exp))) == expected
     assert len(filename_with_extension) == expected
     assert extension == expected_extension

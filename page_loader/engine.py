@@ -11,7 +11,6 @@ from page_loader.file import (
     add_version,
     build_dirname,
     build_filename,
-    convert_name,
     create_directory,
     write_file,
 )
@@ -37,7 +36,7 @@ def build_link(root_url: str, source_url: str) -> Optional[str]:
         return urljoin(root_url, source_url)
 
 
-def download(url: str, root_dir: str) -> str:
+def download(url: str, root_dir='') -> str:
     """
     Download page from URL.
 
@@ -55,19 +54,22 @@ def download(url: str, root_dir: str) -> str:
     page, resources = parse_page(content, url, resources_dir_name)
     full_path_index_page = os.path.join(
         root_dir,
-        '{name}.html'.format(name=convert_name(url)),
+        build_filename(url),
     )
     write_file(path=full_path_index_page, data=page)
 
     with Bar('Processing', max=len(resources)) as bar:
-        for link, path in resources.items():
+        for path, link in resources.items():
             bar.next()
             try:
                 resource_content = send_request(link).content
             except requests.RequestException as error:
                 logging.warning(error)
             else:
-                write_file(os.path.join(root_dir, path), resource_content)
+                write_file(
+                    os.path.join(root_dir, resources_dir_name, path),
+                    resource_content,
+                )
 
     return full_path_index_page
 
@@ -87,7 +89,6 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
     soup = BeautifulSoup(page, 'html.parser')
     tags = {'img': 'src', 'script': 'src', 'link': 'href'}
     resources_links = {}
-    file_versions = {}
     for tag in soup.find_all(tags):
         attr_value = tag.get(tags[tag.name])
         if attr_value is None:
@@ -97,33 +98,16 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
         if source_link is None:
             continue
 
-        resources_filename, is_crop_filename = build_filename(source_link)
-        if is_crop_filename:
-            exists_file_names = map(
-                lambda file_path: os.path.split(file_path)[1],
-                resources_links.values(),
-            )
-            if resources_filename in exists_file_names:
-                if resources_filename in file_versions:
-                    file_versions[resources_filename] += 1
-                else:
-                    file_versions.setdefault(resources_filename, 0)
-                resources_filename = add_version(
-                    resources_filename,
-                    file_versions[resources_filename],
-                )
+        resources_filename = build_filename(source_link)
+        if resources_filename in resources_links:
+            resources_filename = add_version(resources_filename)
 
-        resources_path = os.path.join(
-            resources_dir,
-            resources_filename,
-        )
+        resources_path = os.path.join(resources_dir, resources_filename)
 
         tag[tags[tag.name]] = resources_path
-        resources_links[source_link] = resources_path
+        resources_links[resources_filename] = source_link
 
-        logging.debug('Link resources successful added {link}'.format(
-            link=source_link,
-        ))
+        logging.debug('Link resources successful added %s', source_link)
     return soup.prettify(formatter='html5'), resources_links
 
 

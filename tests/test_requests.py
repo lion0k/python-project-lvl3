@@ -36,24 +36,24 @@ def test_raises_exception_connection_error():
 @pytest.mark.parametrize(
     'root_url, src_url, expected', [
         (
-            'http://test.com/test',
+            '{url}/test'.format(url=URL),
             '//test.com/images/python.png',
-            'http://test.com/images/python.png',
+            '{url}/images/python.png'.format(url=URL),
         ),
         (
-            'http://test.com/test',
+            '{url}/test'.format(url=URL),
             'http://diff_domen.com/python.png',
             None,
         ),
         (
-            'http://test.com/blog/',
+            '{url}/blog/'.format(url=URL),
             'photos/image.png',
-            'http://test.com/blog/photos/image.png',
+            '{url}/blog/photos/image.png'.format(url=URL),
         ),
         (
-            'http://test.com/blog/',
+            '{url}/blog/'.format(url=URL),
             '/photos/image.png',
-            'http://test.com/photos/image.png',
+            '{url}/photos/image.png'.format(url=URL),
         ),
     ],
 )
