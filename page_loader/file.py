@@ -107,7 +107,7 @@ def add_version(filename: str) -> str:
     """
     chars = string.ascii_letters + string.digits
     path, extension = os.path.splitext(filename)
-    salt = ''.join([random.choice(chars) for _ in range(6)])
+    salt = ''.join(random.choices(chars))
     crop_path = filename[:len(path) - len(salt)]
     return '{crop_path}{salt}{extension}'.format(
         crop_path=crop_path,

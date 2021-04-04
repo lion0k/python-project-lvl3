@@ -30,17 +30,23 @@ def get_file_absolute_path(filename: str) -> str:
     )
 
 
-def test_page_loader():
-    """Test page loader."""
+def test_page_loader(mocker):
+    """
+    Test page loader.
+
+    Args:
+        mocker: mocker
+    """
+    mocker.patch('random.choices', return_value=['h', '2', 'i', 's', '4', 'x'])
     with tempfile.TemporaryDirectory() as tempdir:
         expected_path_index_page = join(tempdir, 'test-com.html')
         with open(get_file_absolute_path('page.html')) as file_before:
-            with requests_mock.Mocker() as mock:
-                mock.get(URL, text=file_before.read())
-                mock.get('{url}/images/python.png'.format(url=URL), content=b'png')
-                mock.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
-                mock.get('{url}/courses'.format(url=URL), content=b'html')
-                mock.get('{url}/styles/app.css'.format(url=URL), content=b'css')
+            with requests_mock.Mocker() as mock_req:
+                mock_req.get(URL, text=file_before.read())
+                mock_req.get('{url}/images/python.png'.format(url=URL), content=b'png')
+                mock_req.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
+                mock_req.get('{url}/courses'.format(url=URL), content=b'html')
+                mock_req.get('{url}/styles/app.css'.format(url=URL), content=b'css')
                 path_index_page = download(URL, tempdir)
                 assert expected_path_index_page == path_index_page
 
@@ -48,6 +54,7 @@ def test_page_loader():
                 assert isdir(resources_dir)
 
                 expected_files = [
+                    'test-com-images-h2is4x.png',
                     'test-com-images-python.png',
                     'test-com-courses.html',
                     'test-com-scripts-test.js',
