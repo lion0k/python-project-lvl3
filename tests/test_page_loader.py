@@ -5,6 +5,7 @@ from os.path import abspath, dirname, isdir, isfile, join, sep
 
 import requests_mock
 from page_loader import download
+from page_loader.file import MAX_LENGTH_FILENAME
 
 ABSOLUTE_PATH_FIXTURE_DIR = '{abs_path}{sep}{dir_fixtures}{sep}'.format(
     abs_path=abspath(dirname(__file__)),
@@ -37,12 +38,27 @@ def test_page_loader(mocker):
     Args:
         mocker: mocker
     """
-    mocker.patch('random.choices', return_value=['h', '2', 'i', 's', '4', 'x'])
+    mocker.patch('random.choices', return_value=['h', '2', 'i', 'S', '4', 'x'])
     with tempfile.TemporaryDirectory() as tempdir:
         expected_path_index_page = join(tempdir, 'test-com.html')
         with open(get_file_absolute_path('page.html')) as file_before:
             with requests_mock.Mocker() as mock:
+                long_name = ''.join(['a' for _ in range(MAX_LENGTH_FILENAME + 45)])
                 mock.get(URL, text=file_before.read())
+                mock.get(
+                    '{url}/{link_name}LongLink'.format(
+                        url=URL,
+                        link_name=long_name,
+                    ),
+                    content=b'html',
+                )
+                mock.get(
+                    '{url}/{link_name}AnotherLongLink'.format(
+                        url=URL,
+                        link_name=long_name,
+                    ),
+                    content=b'html',
+                )
                 mock.get('{url}/images/python.png'.format(url=URL), content=b'png')
                 mock.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
                 mock.get('{url}/courses'.format(url=URL), content=b'html')
@@ -54,7 +70,8 @@ def test_page_loader(mocker):
                 assert isdir(resources_dir)
 
                 expected_files = [
-                    'test-com-images-h2is4x.png',
+                    'test-com-{name}.html'.format(name=long_name[:241]),
+                    'test-com-{name}h2iS4x.html'.format(name=long_name[:235]),
                     'test-com-images-python.png',
                     'test-com-courses.html',
                     'test-com-scripts-test.js',
