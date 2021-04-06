@@ -55,7 +55,7 @@ def build_filename(url: str) -> str:
     parsed_url = urlparse(url)
     path, extension = os.path.splitext(parsed_url.path)
     name = convert_name(urljoin(url, path))
-    extension = extension if extension else '.html'
+    extension = extension or '.html'
     if len(name) + len(extension) > MAX_LENGTH_FILENAME:
         name = name[:(MAX_LENGTH_FILENAME - len(extension))]
     return '{name}{extension}'.format(
@@ -107,7 +107,7 @@ def add_version(filename: str) -> str:
     """
     chars = string.ascii_letters + string.digits
     path, extension = os.path.splitext(filename)
-    salt = ''.join(random.choices(chars))
+    salt = ''.join(random.choices(chars, k=6))
     crop_path = filename[:len(path) - len(salt)]
     return '{crop_path}{salt}{extension}'.format(
         crop_path=crop_path,

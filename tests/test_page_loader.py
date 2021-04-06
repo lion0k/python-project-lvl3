@@ -41,12 +41,12 @@ def test_page_loader(mocker):
     with tempfile.TemporaryDirectory() as tempdir:
         expected_path_index_page = join(tempdir, 'test-com.html')
         with open(get_file_absolute_path('page.html')) as file_before:
-            with requests_mock.Mocker() as mock_req:
-                mock_req.get(URL, text=file_before.read())
-                mock_req.get('{url}/images/python.png'.format(url=URL), content=b'png')
-                mock_req.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
-                mock_req.get('{url}/courses'.format(url=URL), content=b'html')
-                mock_req.get('{url}/styles/app.css'.format(url=URL), content=b'css')
+            with requests_mock.Mocker() as mock:
+                mock.get(URL, text=file_before.read())
+                mock.get('{url}/images/python.png'.format(url=URL), content=b'png')
+                mock.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
+                mock.get('{url}/courses'.format(url=URL), content=b'html')
+                mock.get('{url}/styles/app.css'.format(url=URL), content=b'css')
                 path_index_page = download(URL, tempdir)
                 assert expected_path_index_page == path_index_page
 

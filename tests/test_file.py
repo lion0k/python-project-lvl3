@@ -1,18 +1,21 @@
 """Test file."""
 
 import os
+import re
 import tempfile
 from urllib.parse import urljoin
 
 import pytest
 from page_loader.file import (
     MAX_LENGTH_FILENAME,
+    add_version,
     build_filename,
     create_directory,
     write_file,
 )
 
 PERMISSION_ONLY_READ = 0o444
+PATTERN_SALT = re.compile('([a-zA-Z0-9]{6})$')
 
 
 def test_raises_exception_create_directory():
@@ -93,3 +96,20 @@ def test_limit_length_build_filename():
     assert len(build_filename(urljoin(root_url, name_without_exp))) == expected
     assert len(filename_with_extension) == expected
     assert extension == expected_extension
+
+
+def test_add_versions():
+    """Check add versions."""
+    test_extension = '.html'
+    test_filename = '{name}{extension}'.format(
+        name=''.join(['#' for _ in range(250)]),
+        extension=test_extension,
+    )
+    expected = add_version(test_filename)
+    assert test_filename != expected
+    assert len(test_filename) == len(expected)
+    assert test_filename.startswith(test_filename) == expected.startswith(expected)
+
+    filename, extension = os.path.splitext(expected)
+    assert test_extension == extension
+    assert PATTERN_SALT.search(filename) is not None

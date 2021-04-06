@@ -36,7 +36,7 @@ def build_link(root_url: str, source_url: str) -> Optional[str]:
         return urljoin(root_url, source_url)
 
 
-def download(url: str, root_dir='') -> str:
+def download(url: str, root_dir: str = '') -> str:
     """
     Download page from URL.
 
@@ -99,7 +99,7 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
             continue
 
         resources_filename = build_filename(source_link)
-        if resources_filename in resources_links:
+        while resources_filename in resources_links:
             resources_filename = add_version(resources_filename)
 
         resources_path = os.path.join(resources_dir, resources_filename)
