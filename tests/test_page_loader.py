@@ -52,13 +52,6 @@ def test_page_loader(mocker):
                     ),
                     content=b'html',
                 )
-                mock.get(
-                    '{url}/{link_name}AnotherLongLink'.format(
-                        url=URL,
-                        link_name=long_name,
-                    ),
-                    content=b'html',
-                )
                 mock.get('{url}/images/python.png'.format(url=URL), content=b'png')
                 mock.get('{url}/scripts/test.js'.format(url=URL), content=b'js')
                 mock.get('{url}/courses'.format(url=URL), content=b'html')
@@ -70,7 +63,6 @@ def test_page_loader(mocker):
                 assert isdir(resources_dir)
 
                 expected_files = [
-                    'test-com-{name}.html'.format(name=long_name[:241]),
                     'test-com-{name}h2iS4x.html'.format(name=long_name[:235]),
                     'test-com-images-python.png',
                     'test-com-courses.html',

@@ -11,6 +11,7 @@ from urllib.parse import urljoin, urlparse
 MAX_LENGTH_FILENAME = 255
 PATTERN_SCHEME = re.compile('(^.+://)')
 PATTERN_PATH = re.compile('([^a-zA-Z0-9]+)')
+SALT_LENGTH = 6
 
 
 def create_directory(path: str, name_folder: str):
@@ -56,8 +57,6 @@ def build_filename(url: str) -> str:
     path, extension = os.path.splitext(parsed_url.path)
     name = convert_name(urljoin(url, path))
     extension = extension or '.html'
-    if len(name) + len(extension) > MAX_LENGTH_FILENAME:
-        name = name[:(MAX_LENGTH_FILENAME - len(extension))]
     return '{name}{extension}'.format(
         name=name,
         extension=extension,
@@ -95,6 +94,24 @@ def convert_name(url: str) -> str:
     return PATTERN_PATH.sub('-', url_without_scheme)
 
 
+def crop_filename(filename: str) -> str:
+    """
+    Crop filename.
+
+    Args:
+        filename: filename
+
+    Returns:
+        str:
+    """
+    path, extension = os.path.splitext(filename)
+    path = path[:(MAX_LENGTH_FILENAME - len(extension))]
+    return '{path}{extension}'.format(
+        path=path,
+        extension=extension,
+    )
+
+
 def add_version(filename: str) -> str:
     """
     Add version in filename.
@@ -107,7 +124,7 @@ def add_version(filename: str) -> str:
     """
     chars = string.ascii_letters + string.digits
     path, extension = os.path.splitext(filename)
-    salt = ''.join(random.choices(chars, k=6))
+    salt = ''.join(random.choices(chars, k=SALT_LENGTH))
     crop_path = filename[:len(path) - len(salt)]
     return '{crop_path}{salt}{extension}'.format(
         crop_path=crop_path,

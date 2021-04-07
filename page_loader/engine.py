@@ -8,10 +8,12 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 from page_loader.file import (
+    MAX_LENGTH_FILENAME,
     add_version,
     build_dirname,
     build_filename,
     create_directory,
+    crop_filename,
     write_file,
 )
 from progress.bar import Bar
@@ -59,7 +61,7 @@ def download(url: str, root_dir: str = '') -> str:
     write_file(path=full_path_index_page, data=page)
 
     with Bar('Processing', max=len(resources)) as bar:
-        for path, link in resources.items():
+        for link, path in resources.items():
             bar.next()
             try:
                 resource_content = send_request(link).content
@@ -99,13 +101,16 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
             continue
 
         resources_filename = build_filename(source_link)
-        while resources_filename in resources_links:
-            resources_filename = add_version(resources_filename)
+        if len(resources_filename) > MAX_LENGTH_FILENAME:
+            cropped_filename = crop_filename(resources_filename)
+            resources_filename = add_version(cropped_filename)
+            while resources_filename in resources_links.values():
+                resources_filename = add_version(cropped_filename)
 
         resources_path = os.path.join(resources_dir, resources_filename)
 
         tag[tags[tag.name]] = resources_path
-        resources_links[resources_filename] = source_link
+        resources_links[source_link] = resources_filename
 
         logging.debug('Link resources successful added %s', source_link)
     return soup.prettify(formatter='html5'), resources_links

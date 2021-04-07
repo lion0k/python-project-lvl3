@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 import pytest
 from page_loader.file import (
-    MAX_LENGTH_FILENAME,
+    SALT_LENGTH,
     add_version,
     build_filename,
     create_directory,
@@ -15,7 +15,9 @@ from page_loader.file import (
 )
 
 PERMISSION_ONLY_READ = 0o444
-PATTERN_SALT = re.compile('([a-zA-Z0-9]{6})$')
+PATTERN_SALT = re.compile('([a-zA-Z0-9]{{{salt_length}}})$'.format(
+    salt_length=SALT_LENGTH,
+))
 
 
 def test_raises_exception_create_directory():
@@ -82,19 +84,27 @@ def test_build_filename(root_url, src_url, expected):
 def test_limit_length_build_filename():
     """Check limit length build filename."""
     root_url = 'http://127.0.0.1'
-    expected = MAX_LENGTH_FILENAME
-    over_length_filename = MAX_LENGTH_FILENAME + 50
     expected_extension = '.png2png'
-    gen_name = ''.join(['a' for _ in range(over_length_filename)])
-    name_without_exp = '/{name}'.format(name=gen_name)
-    name_with_exp = '/{name}{extension}'.format(
+    gen_name = ''.join(['a' for _ in range(50)])
+    name_without_ext = '/{name}'.format(name=gen_name)
+    name_with_ext = '/{name}{extension}'.format(
         name=gen_name,
         extension=expected_extension,
     )
-    filename_with_extension = build_filename(urljoin(root_url, name_with_exp))
+
+    length_expected_without_ext = sum(map(
+        len,
+        ('127-0-0-1', name_without_ext, '.html'),
+    ))
+    length_expected_with_ext = sum(map(
+        len,
+        ('127-0-0-1', name_with_ext),
+    ))
+    filename_without_extension = build_filename(urljoin(root_url, name_without_ext))
+    filename_with_extension = build_filename(urljoin(root_url, name_with_ext))
     extension = os.path.splitext(filename_with_extension)[1]
-    assert len(build_filename(urljoin(root_url, name_without_exp))) == expected
-    assert len(filename_with_extension) == expected
+    assert len(filename_without_extension) == length_expected_without_ext
+    assert len(filename_with_extension) == length_expected_with_ext
     assert extension == expected_extension
 
 
