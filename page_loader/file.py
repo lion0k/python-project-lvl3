@@ -56,10 +56,9 @@ def build_filename(url: str) -> str:
     parsed_url = urlparse(url)
     path, extension = os.path.splitext(parsed_url.path)
     name = convert_name(urljoin(url, path))
-    extension = extension or '.html'
     return '{name}{extension}'.format(
         name=name,
-        extension=extension,
+        extension=extension or '.html',
     )
 
 
