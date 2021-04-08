@@ -104,8 +104,6 @@ def parse_page(page: str, url: str, resources_dir: str) -> Tuple[str, dict]:
         if len(resources_filename) > MAX_LENGTH_FILENAME:
             cropped_filename = crop_filename(resources_filename)
             resources_filename = add_version(cropped_filename)
-            while resources_filename in resources_links.values():
-                resources_filename = add_version(cropped_filename)
 
         resources_path = os.path.join(resources_dir, resources_filename)
 

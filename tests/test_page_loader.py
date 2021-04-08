@@ -38,7 +38,10 @@ def test_page_loader(mocker):
     Args:
         mocker: mocker
     """
-    mocker.patch('random.choices', return_value=['h', '2', 'i', 'S', '4', 'x'])
+    mocker.patch(
+        'random.choices',
+        return_value=['h', '2', 'i', 'S', '4', 'x', 'h', '2', 'i', 'S'],
+    )
     with tempfile.TemporaryDirectory() as tempdir:
         expected_path_index_page = join(tempdir, 'test-com.html')
         with open(get_file_absolute_path('page.html')) as file_before:
@@ -63,7 +66,7 @@ def test_page_loader(mocker):
                 assert isdir(resources_dir)
 
                 expected_files = [
-                    'test-com-{name}h2iS4x.html'.format(name=long_name[:235]),
+                    'test-com-{name}h2iS4xh2iS.html'.format(name=long_name[:231]),
                     'test-com-images-python.png',
                     'test-com-courses.html',
                     'test-com-scripts-test.js',

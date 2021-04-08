@@ -11,7 +11,7 @@ from urllib.parse import urljoin, urlparse
 MAX_LENGTH_FILENAME = 255
 PATTERN_SCHEME = re.compile('(^.+://)')
 PATTERN_PATH = re.compile('([^a-zA-Z0-9]+)')
-SALT_LENGTH = 6
+SALT_LENGTH = 10
 
 
 def create_directory(path: str, name_folder: str):
